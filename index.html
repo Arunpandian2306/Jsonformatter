@@ -96,9 +96,17 @@
 
 <h1>JSON Format Tool</h1>
 
-<!-- GOOGLE AD PLACEMENT -->
+<textarea id="jsonInput" placeholder="Paste your JSON here..."></textarea>
+
+<div class="buttons">
+  <button class="validate" onclick="validateJSON()">Validate</button>
+  <button class="pretty" onclick="prettifyJSON()">Prettify</button>
+  <button class="minify" onclick="minifyJSON()">Compress</button>
+  <button class="clear" onclick="clearJSON()">Clear</button>
+</div>
+
+<!-- GOOGLE AD BELOW BUTTONS -->
 <section style="padding:10px 0; text-align:center;">
-  <!-- pairbridge -->
   <ins class="adsbygoogle"
        style="display:block"
        data-ad-client="ca-pub-1780212763979754"
@@ -109,15 +117,6 @@
        (adsbygoogle = window.adsbygoogle || []).push({});
   </script>
 </section>
-
-<textarea id="jsonInput" placeholder="Paste your JSON here..."></textarea>
-
-<div class="buttons">
-  <button class="validate" onclick="validateJSON()">Validate</button>
-  <button class="pretty" onclick="prettifyJSON()">Prettify</button>
-  <button class="minify" onclick="minifyJSON()">Compress</button>
-  <button class="clear" onclick="clearJSON()">Clear</button>
-</div>
 
 <p id="result"></p>
 
