@@ -3,9 +3,15 @@
 <head>
 <title>Simple JSON Formatter</title>
 
+<meta name="google-adsense-account" content="ca-pub-1780212763979754">
+
 <!-- GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1780212763979754"
      crossorigin="anonymous"></script>
+
+<!-- CodeMirror CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
 
 <style>
   body {
@@ -18,19 +24,20 @@
 
   h1{ margin-bottom:10px; }
 
-  textarea {
-    width:90%;
-    height:450px;
-    padding:10px;
-    background:#ffffff;
-    color:#222;
-    border:1px solid #999;
-    font-size:16px;
-    border-radius:6px;
-    outline:none;
+  .CodeMirror {
+    height: 550px;
+    text-align: left;
+    font-size: 14px;
+    border: 1px solid #999;
+    border-radius: 6px;
+    background: #ffffff;
+    width: 90%;
+    margin: 0 auto;
   }
 
-  textarea:focus{ border-color:#007bff; }
+  .CodeMirror-scroll {
+    min-height: 500px;
+  }
 
   .buttons{
     margin-top:15px;
@@ -49,6 +56,7 @@
   .pretty{ background:#28a745; color:white;}
   .minify{ background:#ff9800; color:white;}
   .clear{ background:#e63946; color:white;}
+  .copy{ background:#17a2b8; color:white;}
 
   #result{
     margin-top:12px;
@@ -66,29 +74,6 @@
     margin-left:auto;
     margin-right:auto;
   }
-
-  #treeContainer {
-    text-align:left;
-    max-width:90%;
-    margin:20px auto;
-    background:white;
-    border:1px solid #ccc;
-    border-radius:6px;
-    padding:10px;
-    min-height:60px;
-  }
-
-  .tree-item{
-    font-family: monospace;
-    cursor:pointer;
-    margin-left:12px;
-  }
-
-  .key{ color:#007bff; }
-  .string{ color:#28a745; }
-  .number{ color:#ff9800; }
-  .boolean{ color:#d90429; }
-  .null{ color:#999; }
 </style>
 </head>
 
@@ -103,10 +88,11 @@
   <button class="pretty" onclick="prettifyJSON()">Prettify</button>
   <button class="minify" onclick="minifyJSON()">Compress</button>
   <button class="clear" onclick="clearJSON()">Clear</button>
+  <button class="copy" onclick="copyJSON()">Copy</button>
 </div>
 
-<!-- GOOGLE AD BELOW BUTTONS -->
-<section style="padding:10px 0; text-align:center;">
+<!-- GOOGLE AD AFTER BUTTONS -->
+<div style="margin:18px auto; width:95%;">
   <ins class="adsbygoogle"
        style="display:block"
        data-ad-client="ca-pub-1780212763979754"
@@ -116,28 +102,44 @@
   <script>
        (adsbygoogle = window.adsbygoogle || []).push({});
   </script>
-</section>
+</div>
 
 <p id="result"></p>
-
-<h3>JSON Tree View</h3>
-<div id="treeContainer">Tree will appear here after validation...</div>
 
 <p class="about">
   This is a simple offline JSON tool built using plain HTML, CSS and JavaScript. 
   Your JSON data is processed only inside your browser and is never uploaded or stored anywhere.
 </p>
 
+<!-- CodeMirror Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+
 <script>
+var editor = CodeMirror.fromTextArea(document.getElementById("jsonInput"), {
+    lineNumbers: true,
+    mode: "application/json",
+    theme: "default",
+    foldGutter: true,
+    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+    matchBrackets: true,
+    autoCloseBrackets: true
+});
+
 function validateJSON(){
-  const text = document.getElementById("jsonInput").value;
+  const text = editor.getValue();
   const result = document.getElementById("result");
 
   try {
-    const parsed = JSON.parse(text);
+    if(!text.trim()) throw new Error("Empty input");
+    JSON.parse(text);
     result.innerHTML = "Valid JSON ✔️";
     result.className = "success";
-    renderTree(parsed);
   } catch(e){
     result.innerHTML = "Invalid JSON ❌<br>" + e.message;
     result.className = "error";
@@ -146,10 +148,11 @@ function validateJSON(){
 
 function prettifyJSON(){
   try{
-    const obj = JSON.parse(document.getElementById("jsonInput").value);
-    document.getElementById("jsonInput").value = JSON.stringify(obj, null, 4);
+    const val = editor.getValue();
+    if(!val.trim()) return;
+    const obj = JSON.parse(val);
+    editor.setValue(JSON.stringify(obj, null, 4));
     showSuccess("Prettified Successfully");
-    renderTree(obj);
   }catch(e){
     showError(e.message);
   }
@@ -157,19 +160,29 @@ function prettifyJSON(){
 
 function minifyJSON(){
   try{
-    const obj = JSON.parse(document.getElementById("jsonInput").value);
-    document.getElementById("jsonInput").value = JSON.stringify(obj);
+    const val = editor.getValue();
+    if(!val.trim()) return;
+    const obj = JSON.parse(val);
+    editor.setValue(JSON.stringify(obj));
     showSuccess("Compressed Successfully");
-    renderTree(obj);
   }catch(e){
     showError(e.message);
   }
 }
 
 function clearJSON(){
-  document.getElementById("jsonInput").value = "";
+  editor.setValue("");
   document.getElementById("result").innerHTML = "";
-  document.getElementById("treeContainer").innerHTML = "Tree will appear here after validation...";
+}
+
+function copyJSON(){
+  const val = editor.getValue();
+  if(!val) return;
+  navigator.clipboard.writeText(val).then(() => {
+    showSuccess("Copied to clipboard! 📋");
+  }).catch(() => {
+    showError("Failed to copy");
+  });
 }
 
 function showSuccess(msg){
@@ -182,46 +195,6 @@ function showError(msg){
   const result = document.getElementById("result");
   result.className = "error";
   result.innerHTML = "Error ❌<br>" + msg;
-}
-
-/* -------- TREE VIEW -------- */
-function renderTree(obj){
-  const container = document.getElementById("treeContainer");
-  container.innerHTML = "";
-  container.appendChild(buildTree(obj));
-}
-
-function buildTree(data){
-  const ul = document.createElement("ul");
-
-  Object.entries(data).forEach(([key, value]) => {
-    const li = document.createElement("li");
-    li.className = "tree-item";
-
-    if(typeof value === "object" && value !== null){
-      li.innerHTML = `<span class='key'>${key}</span>: {}`;
-      li.onclick = function(e){
-        e.stopPropagation();
-        this.children[1].style.display =
-          this.children[1].style.display === "none" ? "block" : "none";
-      };
-      li.appendChild(buildTree(value));
-    } else {
-      li.innerHTML = `<span class='key'>${key}</span>: ${formatValue(value)}`;
-    }
-
-    ul.appendChild(li);
-  });
-
-  return ul;
-}
-
-function formatValue(v){
-  if(typeof v === "string") return `<span class='string'>"${v}"</span>`;
-  if(typeof v === "number") return `<span class='number'>${v}</span>`;
-  if(typeof v === "boolean") return `<span class='boolean'>${v}</span>`;
-  if(v === null) return `<span class='null'>null</span>`;
-  return v;
 }
 </script>
 
